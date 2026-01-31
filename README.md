@@ -19,20 +19,21 @@ Alienware Command Center（AWCC）の「Per Game（アプリごとに照明プ�
 
 ## 完成形アーキテクチャ
 
-```
+```text
 AWCC
  ├ System Default → ライトOFF（デフォルト状態）
- ├ {name1}.exe    → {name1} に紐づく照明プロファイル
- ├ {name2}.exe    → {name2} に紐づく照明プロファイル
+ ├ NAME1.exe      → NAME1 に紐づく照明プロファイル
+ ├ NAME2.exe      → NAME2 に紐づく照明プロファイル
  └ ...            → 追加分
 
 Stream Deck
- ├ ボタン: {name1} → {name1}.exe を起動
- ├ ボタン: {name2} → {name2}.exe を起動
- └ ボタン: Off     → これら常駐EXEを終了（System Defaultに戻す）
+ ├ ボタン: NAME1 → NAME1.exe を起動
+ ├ ボタン: NAME2 → NAME2.exe を起動
+ └ ボタン: Off   → これら常駐EXEを終了（System Defaultに戻す）
 ```
 
 ポイント:
+
 - EXE名のセットは `configure.yaml` で管理し、そこに列挙した名前のEXEを生成。
 - EXEの中身は同一でOK（ファイル名のみ異なる）。
 - 色（照明プロファイル）の違いは AWCC 側で EXE ごとに設定。
@@ -43,7 +44,8 @@ Stream Deck
 
 ### 1) 生成物（EXE）
 
-各 `{name}.exe` は次を満たす:
+各 `NAME.exe` は次を満たす:
+
 - Windows専用（GUIサブシステム、コンソールウィンドウ非表示）
 - 起動したら常駐（メッセージループ）
 - タスクトレイにアイコンを表示
@@ -76,6 +78,7 @@ profiles:
 ```
 
 生成されるEXE:
+
 - `streaming.exe`
 - `dark.exe`
 - `meeting.exe`
@@ -127,7 +130,7 @@ pacman -S --needed base-devel mingw-w64-ucrt-x86_64-toolchain
 
 PowerShell の PATH に追加:
 
-```
+```text
 C:\msys64\ucrt64\bin
 ```
 
@@ -156,7 +159,7 @@ C:\msys64\ucrt64\bin
 cargo build --release
 
 # 生成コマンドの例（最終形は実装で決定）
-# configure.yaml を元に dist/ 以下へ {name}.exe を生成
+# configure.yaml を元に dist/ 以下へ NAME.exe を生成
 cargo run --bin generator -- -c configure.yaml
 ```
 
@@ -167,11 +170,13 @@ cargo run --bin generator -- -c configure.yaml
 ## 運用（AWCC / Stream Deck）
 
 AWCC 側:
+
 - System Default: ライトOFF に設定
-- `dist/{name}.exe` を各名前ごとに Per Game の対象として追加し、照明プロファイルを割り当て
+- `dist/NAME.exe` を各名前ごとに Per Game の対象として追加し、照明プロファイルを割り当て
 
 Stream Deck 側:
-- 「{name}」ボタン: `dist/{name}.exe` を起動（他色EXEは起動直後に本アプリ側で自動停止）
+
+- 「NAME」ボタン: `dist/NAME.exe` を起動（他色EXEは起動直後に本アプリ側で自動停止）
 - 「Off」ボタン: すべての色EXEを終了（任意運用。何も起動していない状態は System Default=OFF）
 
 ---
@@ -179,9 +184,9 @@ Stream Deck 側:
 ## 受け入れ条件（Acceptance Criteria）
 
 - `configure.yaml` に指定した名前のEXEが `dist/` に生成される
-- `{name}.exe` 起動 → AWCCが `{name}.exe` に紐づく照明に切り替わる
+- `NAME.exe` 起動 → AWCCが `NAME.exe` に紐づく照明に切り替わる
 - トレイの右クリックメニューから「終了」で終了できる
-- `{name}.exe` 終了 → System Default（OFF）に戻る
+- `NAME.exe` 終了 → System Default（OFF）に戻る
 - `configure.yaml` に名前を追加すれば、同様にEXEが追加生成できる（拡張容易）
 
 ---
@@ -198,7 +203,6 @@ graph LR
     DEF[System Default]
 
     SD -->|起動| EXE
-    EXE -->|起動直後: 他色停止| EXE
     EXE -->|Per Game マッチ| PROF
     EXE -->|非マッチ| DEF
     KILL[Offボタン/終了] -->|終了| EXE
@@ -249,16 +253,18 @@ stateDiagram-v2
 目的: Stream Deck から任意の色（= AWCC プロファイル）に即時切替し、Off で System Default に戻す。
 
 セットアップ:
+
 - `configure.yaml` に色名を追加し、EXE を生成（例: `streaming.exe`, `dark.exe`, `meeting.exe`）
 - AWCC の Per Game で各 EXE に照明プロファイルを割り当て
 
 ボタン例（推奨パターン）:
+
 - シングルトン対応により、各色ボタンは単純に `dist/NAME.exe` を起動するだけで他色が自動停止し、対象色のみが残ります
 
 応用メモ:
+
 - 既定を OFF 運用にしたい場合、Off ボタンは `taskkill /IM streaming.exe /IM dark.exe /IM meeting.exe /F` を実行（任意）
 - EXE 名を増やしたら、本アプリの生成時にファミリーとして内包されるため、起動直後の自動停止対象に含まれます
-- 必要に応じて各ボタンのアイコンを色に合わせて変更すると視認性が良い
 
 ---
 
@@ -266,38 +272,38 @@ stateDiagram-v2
 
 色ごとに EXE を用意し、AWCC の Per Game で色プロファイルを割り当て、Stream Deck から起動して本体ライトを切り替える例です。
 
-1) `configure.yaml` に色名を列挙（例）:
+1. `configure.yaml` に色名を列挙（例）:
 
-```yaml
-version: 1
-profiles:
-  - name: red
-  - name: blue
-  - name: green
-  - name: warm_white
-```
+    ```yaml
+    version: 1
+    profiles:
+      - name: red
+      - name: blue
+      - name: green
+      - name: warm_white
+    ```
 
-2) 生成すると `dist/` に以下が並ぶ想定:
-- `red.exe`, `blue.exe`, `green.exe`, `warm_white.exe`
+1. 生成後、`dist/` に以下が並ぶ想定:
+    - `red.exe`, `blue.exe`, `green.exe`, `warm_white.exe`
 
-3) AWCC で設定:
-- Per Game に上記 EXE をそれぞれ追加
-- `red.exe` → 真っ赤の照明プリセット、`blue.exe` → 青、`green.exe` → 緑、`warm_white.exe` → 暖色白 …のように割り当て
+1. AWCC で設定:
+    - Per Game に上記 EXE をそれぞれ追加
+    - `red.exe` → 真っ赤の照明プリセット、`blue.exe` → 青、`green.exe` → 緑、`warm_white.exe` → 暖色白 …のように割り当て
 
-4) Stream Deck のボタン割り当て:
-- 「Red」: `dist/red.exe` を起動（任意で Multi Action で他色を停止してから起動）
-- 「Blue」: `dist/blue.exe` を起動
-- 「Green」: `dist/green.exe` を起動
-- 「Warm」: `dist/warm_white.exe` を起動
-- 「Off」: すべての色EXEを停止
+1. Stream Deck のボタン割り当て:
+    - 「Red」: `dist/red.exe` を起動
+    - 「Blue」: `dist/blue.exe` を起動
+    - 「Green」: `dist/green.exe` を起動
+    - 「Warm」: `dist/warm_white.exe` を起動
+    - 「Off」: すべての色EXEを停止
+      - 例（PowerShell）:
 
-例: Off ボタン用 PowerShell コマンド
-
-```powershell
-powershell -NoProfile -WindowStyle Hidden -Command "Get-Process red,blue,green,warm_white -ErrorAction SilentlyContinue | Stop-Process -Force"
-```
+        ```powershell
+        powershell -NoProfile -WindowStyle Hidden -Command "Get-Process red,blue,green,warm_white -ErrorAction SilentlyContinue | Stop-Process -Force"
+        ```
 
 ポイント:
+
 - 各 EXE の中身は同一で、ファイル名のみが AWCC のマッチキーになります
 - 複数色 EXE を同時起動しても AWCC の動作は環境依存になるため、常に一つだけ動かす運用を推奨します
 - 既定（何も起動していない状態）は System Default（ライトOFF）にしておくと分かりやすいです
