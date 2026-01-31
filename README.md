@@ -287,8 +287,8 @@ cargo run --release -p generator -- -c configure.yaml --no-build
 
 トレイ動作（現在のUX）:
 
-- マウスオーバー時のツールチップは表示しない（NIF_TIP 未使用）
-- 右クリックメニューの先頭に現在の EXE 名（例: `red`）を表示（クリック不可）
+- マウスオーバー時にツールチップで 「awcc-ctrl-exe-moc - EXE 名」（例: `awcc-ctrl-exe-moc - red`）を表示
+- 右クリックメニューの先頭に同じ文字列（例: `awcc-ctrl-exe-moc - red`）を表示（クリック不可）
 - 2行目にセパレータ、3行目に `Exit` を表示（クリックで終了）
 
 シングルトン（同系統 EXE の自動停止）:

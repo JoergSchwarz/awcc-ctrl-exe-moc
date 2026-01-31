@@ -7,7 +7,7 @@ use windows::Win32::Graphics::Gdi::HBRUSH;
 use windows::Win32::System::LibraryLoader::GetModuleHandleW;
 use windows::Win32::System::Diagnostics::ToolHelp::*;
 use windows::Win32::System::Threading::*;
-use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIM_ADD, NIM_DELETE, NOTIFYICONDATAW};
+use windows::Win32::UI::Shell::{Shell_NotifyIconW, NIF_ICON, NIF_MESSAGE, NIF_TIP, NIM_ADD, NIM_DELETE, NOTIFYICONDATAW};
 use windows::Win32::UI::WindowsAndMessaging::*;
 
 const TRAY_UID: u32 = 1;
@@ -92,9 +92,17 @@ unsafe fn add_tray_icon(hwnd: HWND) -> windows::core::Result<()> {
     nid.cbSize = size_of::<NOTIFYICONDATAW>() as u32;
     nid.hWnd = hwnd;
     nid.uID = TRAY_UID;
-    nid.uFlags = NIF_MESSAGE | NIF_ICON;
+    // Show tooltip with current exe name on mouseover
+    nid.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP;
     nid.uCallbackMessage = WM_TRAYICON;
     nid.hIcon = LoadIconW(HINSTANCE(0), IDI_APPLICATION)?;
+    // Tooltip text: project name + exe name (stem)
+    let tip_text = format!("awcc-ctrl-exe-moc - {}", current_exe_stem());
+    let tip_w = to_wstr(&tip_text);
+    let max = nid.szTip.len().saturating_sub(1);
+    for (i, ch) in tip_w.iter().take(max).enumerate() {
+        nid.szTip[i] = *ch;
+    }
     let ok = Shell_NotifyIconW(NIM_ADD, &mut nid);
     if !ok.as_bool() {
         return Err(windows::core::Error::from_win32());
@@ -134,7 +142,8 @@ unsafe extern "system" fn wndproc(hwnd: HWND, msg: u32, wparam: WPARAM, lparam: 
                 Err(_) => return LRESULT(0),
             };
             // Title item (disabled/non-clickable) - keep buffers alive until after TrackPopupMenu
-            let title_w = to_wstr(&current_exe_stem());
+            let title_text = format!("awcc-ctrl-exe-moc - {}", current_exe_stem());
+            let title_w = to_wstr(&title_text);
             let exit_w = to_wstr("Exit");
             let _ = AppendMenuW(
                 hmenu,
