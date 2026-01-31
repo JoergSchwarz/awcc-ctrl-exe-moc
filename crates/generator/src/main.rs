@@ -84,15 +84,7 @@ fn main() -> Result<()> {
 
     // Remove obsolete exes that were managed in previous runs but are no longer desired
     let prev = read_prev_managed(&out_dir);
-    for name in prev.difference(&desired) {
-        let path = Path::new(&out_dir).join(name);
-        if path.exists() {
-            match fs::remove_file(&path) {
-                Ok(_) => println!("removed: {}", path.display()),
-                Err(e) => eprintln!("warn: could not remove {}: {}", path.display(), e),
-            }
-        }
-    }
+    remove_obsolete(&out_dir, &prev, &desired);
 
     for p in &cfg.profiles {
         let dest = Path::new(&out_dir).join(exe_name(&p.name));
@@ -169,4 +161,83 @@ fn read_prev_managed(out_dir: &str) -> HashSet<String> {
         }
     }
     set
+}
+
+fn remove_obsolete(out_dir: &str, prev: &HashSet<String>, desired: &HashSet<String>) {
+    for name in prev.difference(desired) {
+        let path = Path::new(out_dir).join(name);
+        if path.exists() {
+            match fs::remove_file(&path) {
+                Ok(_) => println!("removed: {}", path.display()),
+                Err(e) => eprintln!("warn: could not remove {}: {}", path.display(), e),
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn exe_name_appends_exe_on_windows() {
+        let n = exe_name("sample");
+        assert!(n.ends_with(".exe"));
+        assert!(n.starts_with("sample"));
+    }
+
+    #[test]
+    fn read_prev_managed_reads_family_and_off() -> Result<()> {
+        let out = unique_temp_dir()?;
+
+        // Write family.txt
+        let mut fam = fs::File::create(out.join("family.txt"))?;
+        writeln!(fam, "# comment")?;
+        writeln!(fam, "red.exe")?;
+        writeln!(fam, " blue.exe ")?;
+
+        // Write off.txt
+        let mut off = fs::File::create(out.join("off.txt"))?;
+        writeln!(off, "off.exe")?;
+
+        let set = read_prev_managed(out.to_str().unwrap());
+        assert!(set.contains("red.exe"));
+        assert!(set.contains("blue.exe"));
+        assert!(set.contains("off.exe"));
+        fs::remove_dir_all(out)?;
+        Ok(())
+    }
+
+    #[test]
+    fn remove_obsolete_removes_missing_from_desired() -> Result<()> {
+        let out = unique_temp_dir()?;
+
+        // Create dummy files: old1.exe, keep.exe
+        fs::write(out.join("old1.exe"), b"x")?;
+        fs::write(out.join("keep.exe"), b"x")?;
+
+        let mut prev = HashSet::new();
+        prev.insert("old1.exe".to_string());
+        prev.insert("keep.exe".to_string());
+
+        let mut desired = HashSet::new();
+        desired.insert("keep.exe".to_string());
+
+        remove_obsolete(out.to_str().unwrap(), &prev, &desired);
+
+        assert!(!out.join("old1.exe").exists());
+        assert!(out.join("keep.exe").exists());
+        fs::remove_dir_all(out)?;
+        Ok(())
+    }
+
+    fn unique_temp_dir() -> Result<PathBuf> {
+        let base = std::env::temp_dir();
+        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        let path = base.join(format!("awcc-ctrl-exe-moc-test-{}", nanos));
+        fs::create_dir_all(&path)?;
+        Ok(path)
+    }
 }
