@@ -1,5 +1,10 @@
 # awcc-ctrl-exe-moc
 
+[![Rust](https://img.shields.io/badge/rust-1.93.0-stable?logo=rust&logoColor=white)](https://www.rust-lang.org/)
+[![Target](https://img.shields.io/badge/target-x86__64--pc--windows--gnu-blue)](#)
+[![MSYS2](https://img.shields.io/badge/MSYS2-UCRT64-green)](https://www.msys2.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Alienware Command Center（AWCC）の「Per Game（アプリごとに照明プロファイル適用）」を“逆利用”して、外部からRGBを切り替えるための最小構成のWindows常駐トレイアプリと、名前別EXEをまとめて生成する仕組みを提供します。
 
 > このアプリはAWCCのプロファイルやLEDを直接制御しません。特定のEXEが起動していることをAWCCに認識させ、そのEXEに紐づけた照明プロファイルをAWCC側で適用させます。
