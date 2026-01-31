@@ -37,4 +37,3 @@
 ### Known limitations
 
 - generator 実行時、該当 EXE が起動中だと削除/上書きに失敗する（Windows のファイルロック仕様）。`off.exe` で停止してから実行する運用を推奨（保護実装は Unreleased）。
-

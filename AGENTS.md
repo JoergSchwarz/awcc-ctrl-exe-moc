@@ -109,6 +109,12 @@
 
 この `AGENTS.md` は「常に最新」を前提に運用します。仕様・方針・規約を更新した場合は、同一変更セット（または PR）で本ファイルも必ず更新してください。
 
+## 自己チェック（Lint/Build/Test）
+
+- Markdown 変更時は必ずローカルで markdownlint を実行し、指摘解消後にハンドオフする。
+- コード変更時は `cargo build`（必要に応じて `-p` で対象限定）→ `cargo test` まで実行し、失敗を自分で修正してから共有する。
+- 生成フローの変更時は `cargo run --release -p generator -- -c configure.yaml` を実行し、`dist/` の実体で反映を確認する。
+
 ## CI
 
 - 現状: markdownlint（GitHub Actions）を運用中。
